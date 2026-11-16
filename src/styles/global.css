@@ -22,3 +22,9 @@
 #devicesDialog h3{font-family:Manrope,sans-serif;color:#1d3f46;font-size:15px}
 #devicesDialog table{min-width:690px}
 @media(max-width:700px){.client-actions{min-width:0}.device-first{padding:14px}}
+
+/* Administración de expedientes */
+.admin-manage{max-width:960px}
+.admin-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px;margin-bottom:16px}
+.admin-actions .btn{min-height:44px}
+@media(max-width:720px){.admin-actions{flex-direction:column}.admin-actions .btn{width:100%}}
