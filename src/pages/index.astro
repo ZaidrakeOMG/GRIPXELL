@@ -92,6 +92,26 @@ export const prerender=false;
 <dialog id="deviceDialog" class="modal"><form id="deviceForm" class="modal-box"><div class="modal-head"><div><div class="eyebrow">DISPOSITIVOS</div><h2>Agregar otro equipo</h2><p class="muted" id="deviceClientName"></p></div><button class="close" type="button" data-close="deviceDialog">Cerrar</button></div>
 <div class="form-grid"><label class="full">Equipo o descripción <input id="deviceDescription" maxlength="220" required placeholder="Ej. Samsung Galaxy S25"/></label><label>Marca <input id="deviceBrand" maxlength="90"/></label><label>Modelo <input id="deviceModel" maxlength="100"/></label><label>Color <input id="deviceColor" maxlength="60"/></label><label>IMEI del equipo (15 dígitos) <input id="deviceImei" maxlength="15" minlength="15" required pattern="[0-9]{15}" inputmode="numeric" placeholder="15 dígitos"/></label><label>Serie (opcional) <input id="deviceSerial" maxlength="80"/></label><label>Precio de venta sugerido <input id="devicePrice" min="0" step="0.01" type="number" value="0"/></label><label class="full">Observaciones <input id="deviceNotes" maxlength="500"/></label></div>
 <div class="modal-actions"><button class="btn btn-outline" type="button" data-close="deviceDialog">Cancelar</button><button class="btn btn-primary" type="submit">Guardar dispositivo</button></div></form></dialog>
+<dialog id="paymentEditDialog" class="modal">
+  <form id="paymentEditForm" class="modal-box">
+    <div class="modal-head">
+      <div><div class="eyebrow">CORREGIR MOVIMIENTO</div><h2>Modificar abono o enganche</h2><p class="muted">El cambio quedará registrado en el historial y actualizará el saldo y los PDFs.</p></div>
+      <button class="close" type="button" data-close="paymentEditDialog">Cerrar</button>
+    </div>
+    <input id="editPaymentId" type="hidden"/>
+    <div class="form-grid">
+      <label>Tipo de pago <select id="editPaymentType" required><option value="abono">Abono</option><option value="enganche">Enganche recibido</option><option value="liquidacion">Liquidación</option></select></label>
+      <label>Importe recibido ($) <input id="editPaymentAmount" type="number" step="0.01" min="0.01" required/></label>
+      <label>Fecha real del pago <input id="editPaymentDate" type="date" required/></label>
+      <label>Fecha programada (opcional) <input id="editPaymentDueDate" type="date"/></label>
+      <label>Forma de pago <select id="editPaymentMethod"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="otro">Otro</option></select></label>
+      <label>Referencia <input id="editPaymentReference" maxlength="250" placeholder="Referencia opcional"/></label>
+      <label class="full">Motivo de la corrección <textarea id="editPaymentReason" rows="2" minlength="4" maxlength="500" placeholder="Ejemplo: el cliente pagó $500 y se capturaron $50" required></textarea></label>
+    </div>
+    <p class="small-note">Modificar un enganche recibido cambia el dinero contabilizado. El enganche acordado se modifica en las condiciones de la orden. Los PDFs anteriores se conservan.</p>
+    <div class="modal-actions"><button class="btn btn-outline" type="button" data-close="paymentEditDialog">Cancelar</button><button class="btn btn-primary" type="submit">Guardar corrección</button></div>
+  </form>
+</dialog>
 <dialog id="orderDialog" class="modal large"><div class="modal-box"><div class="modal-head"><div><div class="eyebrow">EXPEDIENTE DIGITAL</div><h2 id="detailTitle">Detalle de orden</h2><p class="muted" id="detailSubtitle"></p></div><button class="close" type="button" data-close="orderDialog">Cerrar</button></div><div id="detailBody" class="detail-body"></div></div></dialog>
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 <script>import "../scripts/app.mjs";</script>
