@@ -98,7 +98,7 @@ async function deleteAdminCliente(modo){
  if(!confirm('¿Confirmas el borrado definitivo de '+c.nombre+'? '+message))return;
  let result;
  try{result=await api('/api/administracion',{method:'POST',body:{cliente_id:c.id,modo,confirmacion:phrase,codigo}})}
- catch(err){alert('No se pudo eliminar el expediente.\\n\\n'+err.message+'\\n\\nRevisa el SQL 05 de Supabase y el código administrativo configurado en Vercel.');throw err}
+ catch(err){alert('No se pudo eliminar el expediente.\n\n'+err.message+'\n\nRevisa el SQL 05 de Supabase y el código administrativo configurado en Vercel.');throw err}
  await refresh();
  toast(result.warning||('Eliminación terminada: '+result.ordenes_eliminadas+' órdenes y '+result.abonos_eliminados+' pagos'));
 }
