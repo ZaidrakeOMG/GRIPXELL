@@ -24,11 +24,11 @@ const paymentsFor=id=>st.abonos.filter(a=>a.orden_id===id&&a.estado==='vigente')
 const remain=o=>Math.max(0,Math.round((Number(o.total||0)-paymentsFor(o.id))*100)/100);
 const escapeCsv=x=>'"'+String(x??'').replaceAll('"','""')+'"';
 function saveCsv(filename,rows){const body='\ufeff'+rows.map(r=>r.map(escapeCsv).join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([body],{type:'text/csv;charset=utf-8'}));a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)}
-function go(screen){$$('[data-screen]').forEach(v=>v.classList.toggle('active',v.dataset.screen===screen));$$('.nav-link').forEach(v=>v.classList.toggle('active',v.dataset.nav===screen));window.scrollTo({top:0,behavior:'smooth'});if(screen==='historico')renderOrders();if(screen==='reportes')renderDocs()}
+function go(screen){$$('[data-screen]').forEach(v=>v.classList.toggle('active',v.dataset.screen===screen));$$('.nav-link').forEach(v=>v.classList.toggle('active',v.dataset.nav===screen));window.scrollTo({top:0,behavior:'smooth'});if(screen==='historico')renderOrders();if(screen==='reportes')renderDocs();if(screen==='administracion')renderAdminClients()}
 async function refresh(){const x=await api('/api/overview');Object.assign(st,{clientes:x.clientes||[],ordenes:x.ordenes||[],documentos:x.documentos||[],abonos:x.abonos||[],dispositivos:x.dispositivos||[]});renderAll()}
 async function connection(){try{const s=await api('/api/status');$('#leftDot').classList.add('online');$('#leftStatus').textContent='Conectado con Supabase';$('#connectionLabel').textContent='Base conectada';$('#statusDetail').textContent='Conexión a Supabase activa';$('#setupWarning').classList.add('hidden');await refresh()}catch(err){$('#leftDot').classList.remove('online');$('#leftStatus').textContent='Revisar conexión';$('#connectionLabel').textContent='Sin conexión';$('#statusDetail').textContent=err.message;$('#setupWarning').classList.remove('hidden');$('#setupWarning').textContent=`Revisa la conexión: ${err.message}. Si faltan tablas, ejecuta los archivos SQL incluidos en la carpeta supabase desde el SQL Editor del proyecto.`;toast(err.message,true)}}
 function renderAll(){
- renderMetrics();renderClients();renderOrders();renderDocs();renderClientSelector();
+ renderMetrics();renderClients();renderOrders();renderDocs();renderClientSelector();renderAdminClients();
 }
 function renderClientSelector(){
  const select=$('#orderClient'),current=select.value;
@@ -62,7 +62,42 @@ const badge=s=>`<span class="tag ${e(s)}">${e(s==='pagada'?'Pagada':s==='cancela
 function renderClients(){
  const q=$('#searchClients').value.trim().toLowerCase();
  const found=st.clientes.filter(c=>(`${c.nombre} ${c.telefono} ${c.rfc} ${c.ciudad} ${devicesFor(c.id).map(d=>d.descripcion+' '+d.imei).join(' ')}`).toLowerCase().includes(q));
- $('#clientRows').innerHTML=found.map(c=>`<tr><td><strong>${e(c.nombre)}</strong><div class="muted">${e(imeisFor(c.id)||'Sin IMEI registrado')}</div></td><td>${e(c.telefono||'—')}</td><td>${devicesFor(c.id).length} registrado(s)</td><td><span class="tag ${c.estado==='baja'?'cancelada':'pagada'}">${c.estado==='baja'?'Baja':'Activo'}</span></td><td><div class="client-actions"><button class="table-action" data-action="client-devices" data-id="${e(c.id)}">Equipos y órdenes</button><button class="table-action" data-action="client-edit" data-id="${e(c.id)}">Editar</button><button class="table-action" data-action="client-status" data-id="${e(c.id)}">${c.estado==='baja'?'Reactivar':'Dar de baja'}</button></div></td></tr>`).join('')||'<tr><td colspan="5" class="empty">No se encontraron clientes</td></tr>';
+ $('#clientRows').innerHTML=found.map(c=>`<tr><td><strong>${e(c.nombre)}</strong><div class="muted">${e(imeisFor(c.id)||'Sin IMEI registrado')}</div></td><td>${e(c.telefono||'—')}</td><td>${devicesFor(c.id).length} registrado(s)</td><td><span class="tag ${c.estado==='baja'?'cancelada':'pagada'}">${c.estado==='baja'?'Baja':'Activo'}</span></td><td><div class="client-actions"><button class="table-action" data-action="client-devices" data-id="${e(c.id)}">Equipos y órdenes</button><button class="table-action" data-action="client-edit" data-id="${e(c.id)}">Editar</button><button class="table-action" data-action="admin-open" data-id="${e(c.id)}">Administrar</button><button class="table-action" data-action="client-status" data-id="${e(c.id)}">${c.estado==='baja'?'Reactivar':'Dar de baja'}</button></div></td></tr>`).join('')||'<tr><td colspan="5" class="empty">No se encontraron clientes</td></tr>';
+}
+
+function renderAdminClients(){
+ const select=$('#adminClientSelect');if(!select)return;
+ const selected=select.value,query=$('#adminClientSearch').value.trim().toLowerCase();
+ const matches=st.clientes.filter(c=> (c.nombre+' '+(c.telefono||'')+' '+imeisFor(c.id)).toLowerCase().includes(query));
+ select.innerHTML='<option value="">Seleccionar cliente</option>'+matches.map(c=>`<option value="${e(c.id)}">${e(c.nombre)}${imeisFor(c.id)?' - '+e(imeisFor(c.id)):''}</option>`).join('');
+ if(matches.some(c=>c.id===selected))select.value=selected;
+ showAdminClient();
+}
+function showAdminClient(){
+ const target=$('#adminClientDetail');if(!target)return;
+ const c=clientFor($('#adminClientSelect').value);
+ if(!c){target.textContent='Selecciona un cliente para consultar su expediente.';return}
+ const orders=st.ordenes.filter(o=>o.cliente_id===c.id);
+ const ids=new Set(orders.map(o=>o.id));
+ const payments=st.abonos.filter(a=>ids.has(a.orden_id));
+ const docs=st.documentos.filter(d=>ids.has(d.orden_id));
+ target.textContent=c.nombre+' | '+devicesFor(c.id).length+' dispositivos | '+orders.length+' órdenes | '+payments.length+' abonos | '+docs.length+' PDFs históricos';
+}
+async function deleteAdminCliente(modo){
+ const c=clientFor($('#adminClientSelect').value);
+ if(!c)throw Error('Selecciona un cliente');
+ if(!['historial','cliente'].includes(modo))throw Error('Acción inválida');
+ const message=modo==='historial'?'Se eliminarán órdenes, pagos, movimientos y PDFs, pero se conservará el cliente y sus dispositivos.':'Se eliminará permanentemente el cliente junto con sus dispositivos, órdenes, pagos y PDFs.';
+ const phrase=(modo==='historial'?'BORRAR HISTORIAL':'BORRAR CLIENTE')+' '+c.nombre;
+ const written=prompt(message+' Para confirmar escribe exactamente: '+phrase);
+ if(written===null)return;
+ if(written!==phrase)throw Error('Confirmación incorrecta. No se borró nada.');
+ const codigo=prompt('Escribe el código administrativo de eliminación (no es inicio de sesión):');
+ if(codigo===null)return;
+ if(!confirm('¿Confirmas el borrado definitivo de '+c.nombre+'? '+message))return;
+ const result=await api('/api/administracion',{method:'POST',body:{cliente_id:c.id,modo,confirmacion:phrase,codigo}});
+ await refresh();
+ toast(result.warning||('Eliminación terminada: '+result.ordenes_eliminadas+' órdenes y '+result.abonos_eliminados+' pagos'));
 }
 function renderOrders(){const q=$('#searchOrders').value.trim().toLowerCase(),v=$('#filterStatus').value;const f=st.ordenes.filter(o=>(!v||v===o.estado)&&(`${o.folio} ${nameFor(o.cliente_id)} ${deviceFor(o.dispositivo_id)?.imei||''} ${deviceFor(o.dispositivo_id)?.descripcion||''}`).toLowerCase().includes(q));$('#countOrders').textContent=`${f.length} órdenes`;$('#historyRows').innerHTML=f.map(o=>`<tr><td><strong>${folio(o.folio)}</strong></td><td>${e(nameFor(o.cliente_id))}</td><td>${dateFmt(o.fecha)}</td><td>${e(o.tipo_venta)}</td><td><strong>${fmt(o.total)}</strong></td><td>${badge(o.estado)}</td><td><button class="table-action" data-action="detail" data-id="${e(o.id)}">Abrir</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No hay órdenes con ese filtro</td></tr>'}
 function renderDocs(){const docs=[...st.documentos].sort((a,b)=>String(b.fecha_generacion).localeCompare(String(a.fecha_generacion)));$('#docCount').textContent=`${docs.length} versiones`;const ids=new Map(st.ordenes.map(o=>[o.id,o.folio]));$('#allDocs').innerHTML=docs.slice(0,150).map(d=>`<tr><td>${folio(ids.get(d.orden_id))}</td><td>${d.tipo_documento==='nota'?'Nota de venta':'Estado de cuenta'}</td><td>v${d.version}</td><td>${dateFmt(d.fecha_generacion)}</td><td><button class="table-action" data-action="download-doc" data-id="${e(d.id)}">Descargar</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Todavía no hay archivos</td></tr>'}
@@ -150,6 +185,8 @@ async function action(act,id,el){try{
  if(act==='detail'){if($('#devicesDialog').open)$('#devicesDialog').close();return showOrder(id);}
  if(act==='new')return newOrder();
  if(act==='client-add')return clientDialog();
+ if(act==='admin-open'){go('administracion');$('#adminClientSearch').value='';renderAdminClients();$('#adminClientSelect').value=id;showAdminClient();return}
+ if(act==='admin-delete')return await deleteAdminCliente(el.dataset.modo);
  if(act==='client-edit')return clientDialog(st.clientes.find(x=>x.id===id));
  if(act==='client-devices')return showDevices(id);
  if(act==='device-add')return deviceDialog(id);
@@ -194,5 +231,6 @@ document.addEventListener('click',ev=>{const nav=ev.target.closest('[data-nav]')
 $('#orderClientSearch').addEventListener('input',renderClientSelector);$('#orderClient').addEventListener('change',renderDeviceSelect);$('#orderDevice').addEventListener('change',fillDeviceItem);
 $('#deviceForm').addEventListener('submit',saveDevice);
 $('#addItem').addEventListener('click',()=>addRow());$('#clientForm').addEventListener('submit',saveClient);$('#orderForm').addEventListener('submit',saveOrder);['#ivaPercent','#downPayment','#weeklyPayment','#saleType'].forEach(s=>$(s).addEventListener('input',calc));$('#saleType').addEventListener('change',()=>{if($('#saleType').value==='contado'){$('#weeklyPayment').value=0;calc()}});
-$('#searchClients').addEventListener('input',renderClients);$('#searchOrders').addEventListener('input',renderOrders);$('#filterStatus').addEventListener('change',renderOrders);$('#exportCsv').addEventListener('click',exportData);$('#importExcel').addEventListener('click',importExcel);
+$('#searchClients').addEventListener('input',renderClients);$('#searchOrders').addEventListener('input',renderOrders);$('#filterStatus').addEventListener('change',renderOrders);$('#exportCsv').addEventListener('click',exportData);$('#importExcel')?.addEventListener('click',importExcel);
+$('#adminClientSearch').addEventListener('input',renderAdminClients);$('#adminClientSelect').addEventListener('change',showAdminClient);
 $('#dateNow').textContent=new Intl.DateTimeFormat('es-MX',{dateStyle:'long'}).format(new Date());$('#orderDate').value=today();addRow();connection();
