@@ -1,0 +1,46 @@
+GRIPXELL COMPLETO V5 - CLIENTES CON IMEI POR TELEFONO
+==========================================================
+
+ESTE ZIP INCLUYE TODAS LAS ACTUALIZACIONES. NO NECESITAS INSTALAR LAS VIEJAS.
+
+1) Entra a tu proyecto GRIPXELL en Supabase:
+   https://supabase.com/dashboard/project/xddcspjdcrjonfowspcp/sql/new
+   SQL Editor > New Query > pega TODO el archivo:
+   supabase\00_INSTALAR_TODO_GRIPXELL.sql
+   Presiona Run. Debe mostrar Success.
+   No borra datos existentes; incluye clientes, ordenes, pagos, PDF y dispositivos.
+   NO ejecutes 01, 02, 03 o 04 si ya ejecutaste 00; son partes del mismo SQL.
+   Si tenias la V4, tambien puedes ejecutar solo este 00 actualizado. No borra datos.
+
+2) Copia tu .env del proyecto anterior a ESTA carpeta GRIPXELL_COMPLETO.
+   Si no tienes uno, ejecuta CONFIGURAR_ENV.bat para crearlo.
+   La clave debe empezar con sb_secret_ y nunca debe estar dentro de public/.
+   URL CORRECTA: https://xddcspjdcrjonfowspcp.supabase.co
+   NO agregues /rest/v1/.
+
+3) Abre la carpeta GRIPXELL_COMPLETO en Visual Studio Code.
+   En la terminal PowerShell ejecuta:
+       npm.cmd install
+       npm.cmd run dev
+   Abre http://localhost:4321
+
+4) Registra un CLIENTE con nombre y telefono de contacto. Agrega el primer EQUIPO con su IMEI unico de 15 digitos. NO se pide correo electronico.
+   En Clientes -> Equipos y ordenes agrega mas dispositivos al mismo cliente.
+   Para vender usa Nueva orden -> Cliente -> Dispositivo. Cada orden tiene su
+   propio folio, saldo e historial de abonos. Dar de baja NO borra registros.
+   En historial registra fechas programadas y pagos tardios.
+
+SI NO GUARDA:
+ - Ejecuta supabase/00_INSTALAR_TODO_GRIPXELL.sql en el proyecto GRIPXELL.
+ - Ejecuta VERIFICAR_CONFIG.bat; debe decir URL valida True y Clave configurada True.
+ - Reinicia Astro y copia el mensaje de error del servidor si aparece.
+
+SEGURIDAD:
+ Sin inicio de sesion por peticion del usuario. La app esta configurada para
+ ejecutarse en localhost. No abras el puerto al internet publico sin proteccion
+ de red (VPN, firewall o proxy autenticado).
+ Nunca subas .env a GitHub. Regenera la clave privada que se compartio antes.
+
+LIMITACIONES:
+ La compilacion en tu PC, la ejecucion real del SQL y la conexion a la nueva
+ base de Supabase requieren verificacion local; no se ejecutaron aqui.

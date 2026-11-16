@@ -1,0 +1,82 @@
+---
+import '../styles/global.css';
+export const prerender=false;
+---
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="theme-color" content="#102B39"/>
+  <link rel="icon" type="image/png" href="/gripxell-logo.png"/>
+  <meta name="description" content="GRIPXELL - Sistema administrativo de ventas, créditos, clientes y abonos."/>
+  <title>GRIPXELL | Gestión de ventas y créditos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="#inicio"><img class="brand-badge" src="/gripxell-logo.png" alt="Logo GRIPXELL"/><span><strong>GRIPXELL</strong><small>Smart phones y más</small></span></a>
+    <div class="sidebar-label">ADMINISTRACIÓN</div>
+    <nav class="side-nav" aria-label="Navegación principal">
+      <button type="button" class="nav-link active" data-nav="inicio">Resumen general</button>
+      <button type="button" class="nav-link" data-nav="nueva">Nueva orden</button>
+      <button type="button" class="nav-link" data-nav="clientes">Clientes</button>
+      <button type="button" class="nav-link" data-nav="historico">Historial de órdenes</button>
+      <button type="button" class="nav-link" data-nav="reportes">Reportes y archivos</button>
+      <button type="button" class="nav-link" data-nav="configuracion">Configuración</button>
+    </nav>
+    <div class="sidebar-foot"><div class="status-row"><span class="status-dot" id="leftDot"></span><span id="leftStatus">Verificando Supabase...</span></div><small>GRIPXELL | Sistema administrativo</small><small>Sin pantalla de inicio de sesión</small></div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div><div class="eyebrow">PANEL DE CONTROL</div><div class="top-title">GRIPXELL <span>Studio</span></div></div>
+      <div class="top-actions"><span class="today" id="dateNow"></span><span class="connection" id="connectionLabel">Comprobando conexión</span><button class="btn btn-dark btn-compact" data-action="new">Nueva orden</button></div>
+    </header>
+    <div id="setupWarning" class="notice hidden" role="alert"></div>
+    <section class="screen active" data-screen="inicio">
+      <div class="hero"><div class="hero-text"><span class="hero-top">GESTIÓN CENTRALIZADA</span><h1>Todo tu negocio,<br/><em>más organizado.</em></h1><p>Ventas, clientes, créditos, abonos y documentos. Todo en un solo lugar, respaldado en Supabase.</p><button type="button" class="btn btn-white" data-action="new">Crear una orden</button></div><div class="hero-art" aria-hidden="true"><div class="hero-ring ring-1"></div><div class="hero-ring ring-2"></div><div class="hero-circle">G</div><div class="hero-stat">GESTIÓN DE CRÉDITOS <strong>24/7</strong></div></div></div>
+      <div class="stat-grid">
+        <article class="stat"><span>Órdenes registradas</span><strong id="metricOrders">—</strong><small>Historial de ventas</small></article>
+        <article class="stat"><span>Ventas acumuladas</span><strong id="metricSales">—</strong><small>Importe total de órdenes</small></article>
+        <article class="stat"><span>Créditos por cobrar</span><strong id="metricDue">—</strong><small>Saldo vigente pendiente</small></article>
+        <article class="stat"><span>Clientes registrados</span><strong id="metricClients">—</strong><small>Base de clientes</small></article>
+      </div>
+      <div class="panel"><div class="panel-head"><div><div class="eyebrow">ACTIVIDAD</div><h2>Órdenes recientes</h2></div><button class="text-button" data-nav="historico">Ver historial completo</button></div><div class="table-wrap"><table><thead><tr><th>FOLIO</th><th>CLIENTE</th><th>FECHA</th><th>TOTAL</th><th>ESTADO</th><th></th></tr></thead><tbody id="recentOrders"><tr><td colspan="6" class="empty">Sin datos todavía</td></tr></tbody></table></div></div>
+    </section>
+    <section class="screen" data-screen="nueva"><div class="section-top"><div><div class="eyebrow">VENTAS</div><h1>Crear nueva orden</h1><p>Registra equipos de contado o a crédito con folio automático.</p></div></div>
+      <form id="orderForm" class="work-grid">
+        <div class="work-main">
+          <div class="panel form-panel"><div class="panel-head"><h2>Datos de la operación</h2></div><div class="form-grid"><label class="full">Buscar cliente por IMEI, nombre o teléfono <input type="search" id="orderClientSearch" placeholder="Escribe IMEI, nombre o teléfono" autocomplete="off"/></label><label>Cliente <select id="orderClient" required><option value="">Seleccionar cliente</option></select></label><label>Dispositivo del cliente <select id="orderDevice"><option value="">Sin dispositivo asociado</option></select></label><label>Fecha de venta <input type="date" id="orderDate" required/></label><label>Tipo de venta <select id="saleType"><option value="credito">Crédito</option><option value="contado">Contado</option></select></label><label>IVA (%) <input id="ivaPercent" type="number" min="0" max="100" value="0" step="0.01"/></label></div><button type="button" class="text-button mt-12" data-action="client-add">Registrar cliente nuevo</button><button type="button" class="text-button mt-12" data-action="device-add-selected">Agregar dispositivo a este cliente</button></div>
+          <div class="panel form-panel"><div class="panel-head"><h2>Productos o equipos</h2><button type="button" class="btn btn-outline btn-compact" id="addItem">Agregar producto</button></div><div id="itemRows" class="item-inputs"></div></div>
+          <div class="panel form-panel"><div class="panel-head"><h2>Condiciones de pago</h2></div><div class="form-grid"><label>Enganche <input type="number" id="downPayment" min="0" step="0.01" value="0"/></label><label>Abono por semana <input type="number" id="weeklyPayment" min="0" step="0.01" value="0"/></label></div><label class="full-label">Observaciones <textarea id="orderNotes" rows="3" placeholder="Notas adicionales para la orden"></textarea></label></div>
+        </div>
+        <div class="work-side"><div class="panel summary-panel"><div class="eyebrow">RESUMEN DE VENTA</div><h2>Tu nueva orden</h2><div class="summary-row"><span>Subtotal</span><strong id="previewSubtotal">$0.00</strong></div><div class="summary-row"><span>IVA</span><strong id="previewIva">$0.00</strong></div><div class="summary-row main-row"><span>Total de venta</span><strong id="previewTotal">$0.00</strong></div><div class="summary-row"><span>Enganche</span><strong id="previewDown">$0.00</strong></div><div class="summary-row"><span>Saldo inicial</span><strong id="previewBalance">$0.00</strong></div><div class="summary-caption">El folio se asignará cuando guardes. Se crearán una nota y un estado de cuenta PDF.</div><button class="btn btn-primary btn-wide" type="submit" id="saveOrder">Guardar orden y PDFs</button></div></div>
+      </form>
+    </section>
+    <section class="screen" data-screen="clientes"><div class="section-top"><div><div class="eyebrow">DIRECTORIO</div><h1>Clientes</h1><p>Busca por IMEI del equipo, nombre o teléfono. Un mismo cliente puede tener varios dispositivos y órdenes.</p></div><button class="btn btn-primary" data-action="client-add">Registrar cliente</button></div>
+      <div class="panel"><div class="panel-head"><h2>Base de clientes</h2><input class="search-field" id="searchClients" placeholder="Buscar por IMEI, nombre o teléfono"/></div><div class="table-wrap"><table><thead><tr><th>CLIENTE / IMEI</th><th>TELÉFONO</th><th>DISPOSITIVOS</th><th>ESTADO</th><th>ACCIONES</th></tr></thead><tbody id="clientRows"></tbody></table></div></div>
+    </section>
+    <section class="screen" data-screen="historico"><div class="section-top"><div><div class="eyebrow">ARCHIVO DIGITAL</div><h1>Historial de órdenes</h1><p>Busca ventas y consulta pagos, modificaciones y PDFs anteriores.</p></div><button class="btn btn-primary" data-action="new">Crear orden</button></div>
+      <div class="panel"><div class="panel-head panel-head-wrap"><div class="filters"><input class="search-field" id="searchOrders" placeholder="Buscar por IMEI, cliente o folio"/><select id="filterStatus"><option value="">Todos los estados</option><option value="vigente">Vigentes</option><option value="pagada">Pagadas</option><option value="cancelada">Canceladas</option></select></div><span class="muted" id="countOrders">0 órdenes</span></div><div class="table-wrap"><table><thead><tr><th>FOLIO</th><th>CLIENTE</th><th>FECHA</th><th>MODALIDAD</th><th>IMPORTE</th><th>ESTADO</th><th></th></tr></thead><tbody id="historyRows"></tbody></table></div></div>
+    </section>
+    <section class="screen" data-screen="reportes"><div class="section-top"><div><div class="eyebrow">DOCUMENTACIÓN</div><h1>Reportes y archivos</h1><p>Exporta tus órdenes y consulta tus PDFs históricos.</p></div></div><div class="report-grid"><article class="panel report-card"><div class="report-number">01</div><h2>Todos los PDFs</h2><p>Descarga las versiones más recientes de las notas y estados de cuenta en un único ZIP.</p><a class="btn btn-primary" href="/api/backup" download>Descargar ZIP de PDFs</a></article><article class="panel report-card"><div class="report-number">02</div><h2>Exportación CSV</h2><p>Respalda tus clientes, órdenes y abonos para abrirlos en Excel.</p><button type="button" class="btn btn-outline" id="exportCsv">Descargar CSV</button></article><article class="panel report-card"><div class="report-number">03</div><h2>Históricos permanentes</h2><p>Los documentos se archivan en un bucket privado de Supabase y cada nueva versión conserva el saldo del día.</p><button type="button" class="btn btn-outline" data-nav="historico">Consultar órdenes</button></article></div><div class="panel"><div class="panel-head"><h2>Documentos generados</h2><span class="muted" id="docCount">—</span></div><div class="table-wrap"><table><thead><tr><th>FOLIO</th><th>TIPO</th><th>VERSIÓN</th><th>EMISIÓN</th><th></th></tr></thead><tbody id="allDocs"></tbody></table></div></div></section>
+    <section class="screen" data-screen="configuracion"><div class="section-top"><div><div class="eyebrow">SISTEMA</div><h1>Configuración</h1><p>Conexión a Supabase e importación del archivo histórico.</p></div></div><div class="settings-grid"><article class="panel form-panel"><h2>Conexión a Supabase</h2><p class="muted">GRIPXELL se conecta desde el servidor de Astro. La clave secreta nunca se envía al navegador.</p><div id="statusDetail" class="status-detail">Comprobando...</div><p class="small-note">El archivo <code>.env</code> debe tener SUPABASE_URL y SUPABASE_SECRET_KEY. Después de cambiarlo, reinicia Astro.</p></article><article class="panel form-panel"><h2>Importar folio N°0016</h2><p class="muted">Importa una sola vez el ejemplo original del archivo MACHO.xlsx: cliente, tablet Samsung, pago de $300 y saldo $2,200.</p><button class="btn btn-outline" id="importExcel" type="button">Importar registro del Excel</button><p class="small-note">No sobreescribe órdenes existentes.</p></article></div><article class="notice soft"><strong>Acceso directo sin contraseña.</strong><p>Este sistema no incluye autenticación. Úsalo únicamente en tu PC, red privada o detrás de VPN. Si lo publicas abiertamente, cualquier visitante podría consultar o modificar datos.</p></article></section>
+  </main>
+</div>
+<dialog id="clientDialog" class="modal"><form method="dialog" id="clientForm" class="modal-box"><div class="modal-head"><div><div class="eyebrow">DIRECTORIO</div><h2 id="clientDialogTitle">Nuevo cliente</h2></div><button class="close" type="button" data-close="clientDialog">Cerrar</button></div>
+<div class="form-grid"><label class="full">Nombre completo <input id="clientName" required maxlength="180"/></label><label>Teléfono de contacto <input id="clientPhone" type="tel" maxlength="40"/></label><label>RFC <input id="clientRfc" maxlength="20"/></label><label class="full">Dirección <input id="clientAddress" maxlength="250"/></label><label>Ciudad <input id="clientCity" maxlength="100"/></label><label>Código postal <input id="clientPostal" maxlength="15"/></label></div>
+<section id="firstDeviceBlock" class="device-first"><h3>Primer teléfono o dispositivo que va a comprar</h3><p class="muted">Puedes registrar el primer equipo con su IMEI de 15 dígitos. Si todavía no conoces el IMEI, agrega el dispositivo después.</p>
+<div class="form-grid"><label class="full">Equipo o descripción <input id="firstDeviceDescription" maxlength="220" placeholder="Ej. iPhone 15 negro"/></label><label>Marca <input id="firstDeviceBrand" maxlength="90" placeholder="Apple"/></label><label>Modelo <input id="firstDeviceModel" maxlength="100" placeholder="iPhone 15"/></label><label>IMEI del equipo (15 dígitos) <input id="firstDeviceImei" maxlength="15" minlength="15" pattern="[0-9]{15}" inputmode="numeric" placeholder="15 dígitos"/></label><label>Precio de venta sugerido <input id="firstDevicePrice" type="number" min="0" step="0.01" placeholder="0.00"/></label></div></section>
+<div class="modal-actions"><button type="button" class="btn btn-outline" data-close="clientDialog">Cancelar</button><button class="btn btn-primary" type="submit">Guardar cliente</button></div></form></dialog>
+<dialog id="devicesDialog" class="modal large"><div class="modal-box"><div class="modal-head"><div><div class="eyebrow">EXPEDIENTE DEL CLIENTE</div><h2 id="devicesTitle">Equipos registrados</h2><p id="devicesSubtitle" class="muted"></p></div><button class="close" type="button" data-close="devicesDialog">Cerrar</button></div><div id="devicesBody"></div></div></dialog>
+<dialog id="deviceDialog" class="modal"><form id="deviceForm" class="modal-box"><div class="modal-head"><div><div class="eyebrow">DISPOSITIVOS</div><h2>Agregar otro equipo</h2><p class="muted" id="deviceClientName"></p></div><button class="close" type="button" data-close="deviceDialog">Cerrar</button></div>
+<div class="form-grid"><label class="full">Equipo o descripción <input id="deviceDescription" maxlength="220" required placeholder="Ej. Samsung Galaxy S25"/></label><label>Marca <input id="deviceBrand" maxlength="90"/></label><label>Modelo <input id="deviceModel" maxlength="100"/></label><label>Color <input id="deviceColor" maxlength="60"/></label><label>IMEI del equipo (15 dígitos) <input id="deviceImei" maxlength="15" minlength="15" required pattern="[0-9]{15}" inputmode="numeric" placeholder="15 dígitos"/></label><label>Serie (opcional) <input id="deviceSerial" maxlength="80"/></label><label>Precio de venta sugerido <input id="devicePrice" min="0" step="0.01" type="number" value="0"/></label><label class="full">Observaciones <input id="deviceNotes" maxlength="500"/></label></div>
+<div class="modal-actions"><button class="btn btn-outline" type="button" data-close="deviceDialog">Cancelar</button><button class="btn btn-primary" type="submit">Guardar dispositivo</button></div></form></dialog>
+<dialog id="orderDialog" class="modal large"><div class="modal-box"><div class="modal-head"><div><div class="eyebrow">EXPEDIENTE DIGITAL</div><h2 id="detailTitle">Detalle de orden</h2><p class="muted" id="detailSubtitle"></p></div><button class="close" type="button" data-close="orderDialog">Cerrar</button></div><div id="detailBody" class="detail-body"></div></div></dialog>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+<script>import "../scripts/app.mjs";</script>
+</body>
+</html>

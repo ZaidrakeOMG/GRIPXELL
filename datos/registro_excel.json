@@ -1,0 +1,25 @@
+{
+  "fuente": "MACHO.xlsx / Hoja2",
+  "cliente": {
+    "nombre": "MAYRA LUCERO CORREALOPEZ",
+    "direccion": "CALLE CONOCIDO # COL. CONOCIDO",
+    "ciudad": "GOMEZ PALACIO",
+    "codigo_postal": "",
+    "rfc": ""
+  },
+  "venta": {
+    "folio": 16,
+    "fecha": "2026-10-17",
+    "modalidad": "credito",
+    "tasa_iva": 0,
+    "abono_semanal": 300,
+    "enganche": 0
+  },
+  "partidas": [
+    {"descripcion": "EQUIPO TABLET SAMSUNG", "cantidad": 1, "precio_unitario": 2500}
+  ],
+  "abonos": [
+    {"fecha": "2026-10-17", "monto": 300, "tipo": "abono", "metodo": "efectivo", "comentario": "PAGO 17/OCTUBRE/2026"}
+  ],
+  "resultado_excel": {"total":2500,"abonos":300,"resta":2200}
+}
