@@ -60,7 +60,7 @@ function clienteCard(d,c,o,tipo,y,dispositivo){
  txt(d,limpio(c.rfc),X+350,y+107,152,9,C.ink);
  return y+143;
 }
-function concepto(d,o,partidas,y,tipo,dispositivo){
+function concepto(d,o,partidas,abonos,y,tipo,dispositivo){
  y=ensure(d,y,122,o,tipo);
  txt(d,'CONCEPTO',X+5,y+4,142,10,C.muted,true);
  const p=dispositivo?.descripcion || partidas?.[0]?.descripcion || 'Equipo y accesorios';
@@ -68,7 +68,8 @@ function concepto(d,o,partidas,y,tipo,dispositivo){
  txt(d,concepto,X+5,y+23,217,16,C.ink,true,{height:54});
  if(dispositivo?.imei)txt(d,`IMEI: ${dispositivo.imei}`,X+5,y+88,215,9,C.muted,true);
  line(d,X+229,y+7,X+229,y+89);
- const cards=[['PRECIO DEL EQUIPO',o.total],['ENGANCHE',o.enganche],['ABONO SEMANAL',o.abono_semanal]];
+ const abonado=abonos.filter(a=>a.estado==='vigente').reduce((n,a)=>n+Number(a.monto||0),0);
+ const cards=[['PRECIO DEL EQUIPO',o.total],['ENGANCHE',o.enganche],['ABONOS ACUMULADOS',abonado]];
  cards.forEach(([label,value],i)=>{
   const cx=X+239+i*103;
   rect(d,cx,y+9,97,82,C.pale,12);
@@ -109,8 +110,9 @@ function cronologia(d,o,abonos,eventos,y,tipo){
  const head=()=>{
   rect(d,X,y,CW,27,C.deep,6);
   for(const [label,x,w,align] of [
-   ['FECHA',X+9,78,'left'],['MOVIMIENTO',X+89,217,'left'],
-   ['PROGRAMADO',X+310,86,'center'],['ABONO',X+401,69,'right'],['SALDO',X+474,60,'right']
+   ['FECHA',X+8,72,'left'],['MOVIMIENTO',X+86,179,'left'],
+   ['PROGRAMADO',X+266,77,'center'],['ABONO',X+347,65,'right'],
+   ['ACUMULADO',X+415,66,'right'],['SALDO',X+485,49,'right']
   ])txt(d,label,x,y+8,w,8,C.white,true,{align});
   y+=31;
  };
@@ -120,11 +122,12 @@ function cronologia(d,o,abonos,eventos,y,tipo){
   const current=ensure(d,y,24,o,tipo);
   if(current!==y){y=current;head();}
   if(index%2===0)rect(d,X,y,CW,23,C.pale,0);
-  txt(d,df(m.fecha),X+9,y+6,78,8,C.ink);
-  txt(d,m.etiqueta,X+89,y+6,217,8,m.tipo==='sin_pago'?C.warning:m.tipo==='anulado'?C.inactive:C.deep,m.tipo!=='anulado');
-  txt(d,df(m.fecha_programada),X+310,y+6,86,8,C.muted,false,{align:'center'});
-  txt(d,m.importe?moneda(m.importe):'—',X+401,y+6,69,8,C.ink,false,{align:'right'});
-  txt(d,moneda(m.saldo),X+473,y+6,60,8,C.ink,true,{align:'right'});
+  txt(d,df(m.fecha),X+8,y+6,72,8,C.ink);
+  txt(d,m.etiqueta,X+86,y+6,179,7.6,m.tipo==='sin_pago'?C.warning:m.tipo==='anulado'?C.inactive:C.deep,m.tipo!=='anulado');
+  txt(d,df(m.fecha_programada),X+266,y+6,77,7.6,C.muted,false,{align:'center'});
+  txt(d,m.importe?moneda(m.importe):'—',X+347,y+6,65,7.6,C.ink,false,{align:'right'});
+  txt(d,moneda(m.acumulado),X+415,y+6,66,7.6,C.teal,true,{align:'right'});
+  txt(d,moneda(m.saldo),X+485,y+6,49,7.6,C.ink,true,{align:'right'});
   y+=23;index++;
  }
  if(!mov.length){txt(d,'No hay pagos registrados todavía.',X+10,y+8,CW-20,10,C.muted);y+=28;}
@@ -134,7 +137,7 @@ function condicion(d,o,y,tipo){
  y=ensure(d,y,48,o,tipo);
  rect(d,X,y,CW,42,C.pale,9);
  txt(d,'CONDICIONES',X+12,y+8,110,9,C.muted,true);
- txt(d,`Venta ${o.tipo_venta==='credito'?'a crédito':'de contado'}  ·  Enganche ${moneda(o.enganche)}  ·  Semanal ${moneda(o.abono_semanal)}`,X+12,y+23,CW-24,9,C.ink,true);
+ txt(d,`Venta ${o.tipo_venta==='credito'?'a crédito':'de contado'}  ·  Enganche ${moneda(o.enganche)}  ·  Cuota semanal ${Number(o.abono_semanal)>0?moneda(o.abono_semanal):'No pactada'}`,X+12,y+23,CW-24,9,C.ink,true);
  return y+52;
 }
 function notas(d,o,y,tipo){
@@ -152,7 +155,7 @@ export function createPdf(info,tipo='estado_cuenta'){
   cabecera(d,orden,tipo);
   let y=145;
   y=clienteCard(d,cliente,orden,tipo,y,info.dispositivo);
-  y=concepto(d,orden,partidas,y,tipo,info.dispositivo);
+  y=concepto(d,orden,partidas,abonos,y,tipo,info.dispositivo);
   y=listaProductos(d,orden,partidas,y,tipo);
   if(tipo==='estado_cuenta')y=cronologia(d,orden,abonos,eventos,y,tipo);
   y=condicion(d,orden,y,tipo);
