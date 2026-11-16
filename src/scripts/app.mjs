@@ -187,7 +187,7 @@ $('#detailBody').innerHTML=`<div class="detail-info"><strong>Cliente:</strong> $
 </section>
 <section class="detail-section"><h3>Productos y equipos</h3><div class="table-wrap"><table class="detail-table"><thead><tr><th>CANTIDAD</th><th>DESCRIPCIÓN</th><th>PRECIO U. (IVA INCL.)</th><th>IMPORTE (IVA INCL.)</th></tr></thead><tbody>${partidasVisibles.map(p=>`<tr><td>${e(p.cantidad)}</td><td>${e(p.descripcion)}</td><td>${fmt(p.precio_unitario_con_iva)}</td><td>${fmt(p.importe_con_iva)}</td></tr>`).join('')}</tbody></table></div><p class="muted">Subtotal sin IVA: <strong>${fmt(o.subtotal)}</strong> · IVA: <strong>${fmt(o.iva)}</strong> · Total con IVA: <strong>${fmt(o.total)}</strong>. Los precios unitarios se redondean a centavos.</p></section>
 <section class="detail-section"><h3>Boleta: pagos y fechas sin pago</h3><p class="muted">Los abonos se muestran por separado, aunque sean varios el mismo día. ACUMULADO es la suma total pagada y se actualiza en el PDF. SIN PAGO no modifica el saldo.</p><div class="table-wrap"><table class="detail-table"><thead><tr><th>FECHA</th><th>MOVIMIENTO EN LA BOLETA</th><th>FECHA COMPROMISO</th><th>ABONO</th><th>ACUMULADO</th><th>SALDO</th></tr></thead><tbody>${movimientos.map(m=>`<tr class="${m.tipo==='sin_pago'?'missed-row':''}"><td>${dateFmt(m.fecha)}</td><td><strong>${e(m.etiqueta)}</strong>${m.referencia?`<div class="muted">${e(m.referencia)}</div>`:''}</td><td>${m.fecha_programada?dateFmt(m.fecha_programada):'—'}</td><td>${m.importe?fmt(m.importe):'—'}</td><td><strong>${fmt(m.acumulado)}</strong></td><td><strong>${fmt(m.saldo)}</strong></td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sin movimientos de pago</td></tr>'}</tbody></table></div></section>
-    <section class="detail-section"><h3>Abonos registrados</h3><p class="muted">Puedes anular pagos incorrectos; los registros anulados permanecen en el historial.</p><div class="table-wrap"><table class="detail-table"><thead><tr><th>FECHA REAL</th><th>FECHA PROGRAMADA</th><th>TIPO</th><th>IMPORTE</th><th>ESTADO</th><th></th></tr></thead><tbody>${d.abonos.map(a=>`<tr><td>${dateFmt(a.fecha_pago)}</td><td>${dateFmt(a.fecha_programada)}</td><td>${e(a.tipo_pago)}<div class="muted">${e(a.referencia||'')}</div></td><td><strong>${fmt(a.monto)}</strong></td><td>${e(a.estado)}</td><td>${a.estado==='vigente'&&o.estado!=='cancelada'?`<button class="table-action" data-action="void-payment" data-id="${e(a.id)}">Anular</button>`:''}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sin abonos</td></tr>'}</tbody></table></div></section>
+    <section class="detail-section"><h3>Abonos registrados</h3><p class="muted">Puedes anular pagos incorrectos; los registros anulados permanecen en el historial.</p><div class="table-wrap"><table class="detail-table"><thead><tr><th>FECHA REAL</th><th>FECHA PROGRAMADA</th><th>TIPO</th><th>IMPORTE</th><th>ESTADO</th><th></th></tr></thead><tbody>${d.abonos.map(a=>`<tr><td>${dateFmt(a.fecha_pago)}</td><td>${dateFmt(a.fecha_programada)}</td><td>${e(a.tipo_pago)}<div class="muted">${e(a.referencia||'')}</div></td><td><strong>${fmt(a.monto)}</strong></td><td>${e(a.estado)}</td><td>${a.estado==='vigente'&&o.estado!=='cancelada'?`<button class="table-action" data-action="edit-payment" data-id="${e(a.id)}">Editar</button> <button class="table-action" data-action="void-payment" data-id="${e(a.id)}">Anular</button>`:''}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sin abonos</td></tr>'}</tbody></table></div></section>
 ${o.estado==='vigente'?`<section class="detail-section"><h3>Registrar pago (en fecha o atrasado)</h3><div class="info-block"><strong>Ejemplo:</strong> debía pagar el 05/12/2026 y lo hizo el 10/12/2026. Registra ambas fechas aquí. GRIPXELL archivará automáticamente <strong>Sin pago 05/diciembre/2026</strong> y <strong>Pago del 10/diciembre/2026</strong>.</div><form id="paymentForm" class="detail-form"><label>Fecha programada (opcional)<input id="payDueDate" type="date"></label><label>Fecha real del pago<input id="payDate" type="date" required value="${today()}"></label><label>Monto recibido<input id="payAmount" type="number" min="0.01" step="0.01" max="${bal}" required placeholder="0.00"></label><label>Tipo de pago<select id="payType"><option value="abono">Abono</option><option value="enganche">Enganche recibido</option></select></label><label>Forma de pago<select id="payMethod"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="otro">Otro</option></select></label><label class="detail-full">Referencia (opcional)<input id="payRef" maxlength="250" placeholder="Ejemplo: pago correspondiente al 05/12/2026"></label><button class="btn btn-primary detail-full" type="submit">Guardar pago y actualizar boleta PDF</button></form></section><section class="detail-section"><h3>Marcar día sin pago</h3><p class="muted">Si todavía no te ha pagado, registra únicamente el día que debía pagar. No se modifica el saldo. Más adelante podrás registrar el pago real.</p><form id="missedPaymentForm" class="detail-form"><label>Fecha sin pago<input id="missDate" type="date" required value="${today()}"></label><label class="detail-span-two">Observación<input id="missReason" maxlength="180" placeholder="Ejemplo: No pagó la semana"></label><button class="btn btn-outline" type="submit">Guardar SIN PAGO</button></form></section>`:''}
 <section class="detail-section"><div class="panel-head"><h3>PDFs y versiones guardadas</h3><div class="detail-actions">${latestStatement?`<button class="btn btn-primary btn-compact" data-action="download-doc" data-id="${e(latestStatement.id)}">Descargar estado actualizado (v${latestStatement.version})</button>`:''}<button class="btn btn-outline btn-compact" data-action="new-pdf" data-kind="nota">Nueva nota PDF</button><button class="btn btn-outline btn-compact" data-action="new-pdf" data-kind="estado_cuenta">Nuevo estado PDF</button></div></div><div class="table-wrap"><table class="detail-table"><thead><tr><th>TIPO</th><th>VERSIÓN</th><th>FECHA</th><th>ACCIONES</th></tr></thead><tbody>${activeDocs.map(doc=>`<tr><td>${doc.tipo_documento==='nota'?'Nota de venta':'Estado de cuenta'}${latestStatement?.id===doc.id?' (más reciente)':''}</td><td>v${doc.version}</td><td>${dateFmt(doc.fecha_generacion)}</td><td><div class="doc-actions"><button class="btn btn-outline" data-action="download-doc" data-id="${e(doc.id)}">PDF</button><button class="btn btn-outline" data-action="share-wa" data-id="${e(doc.id)}">WhatsApp</button><button class="btn btn-outline" data-action="share-email" data-id="${e(doc.id)}">Correo</button></div></td></tr>`).join('')||'<tr><td colspan="4" class="empty">No hay PDFs generados</td></tr>'}</tbody></table></div></section>
 <section class="detail-section"><h3>Bitácora de movimientos</h3><div class="table-wrap"><table class="detail-table"><thead><tr><th>FECHA</th><th>MOVIMIENTO</th><th>DESCRIPCIÓN</th></tr></thead><tbody>${d.eventos.slice(0,50).map(v=>`<tr><td>${dateFmt(v.fecha_movimiento)}</td><td>${e(v.tipo_movimiento.replaceAll('_',' '))}</td><td>${e(v.descripcion||'')}</td></tr>`).join('')||'<tr><td colspan="3">Sin movimientos</td></tr>'}</tbody></table></div>${o.estado!=='cancelada'?`<div class="detail-actions" style="justify-content:flex-end;margin-top:15px"><button class="btn btn-danger btn-compact" data-action="cancel-order">Cancelar orden</button></div>`:''}</section>`;
@@ -205,6 +205,45 @@ async function saveConditions(ev){
   await reloadOrder();
   toast(x.warnings?.length?'Condiciones guardadas; revisa avisos de PDF: '+x.warnings.join('; '):'Enganche y cuota semanal guardados. Boleta y PDFs actualizados.');
  }catch(err){toast(err.message,true)}finally{btn.disabled=false}
+}
+function editExistingPayment(id){
+ const a=st.actual?.abonos?.find(x=>x.id===id);
+ if(!a)throw Error('No se encontró el pago');
+ if(a.estado!=='vigente')throw Error('Un pago anulado no se puede editar');
+ if(st.actual.orden.estado==='cancelada')throw Error('No puedes modificar pagos de órdenes canceladas');
+ $('#editPaymentId').value=a.id;
+ $('#editPaymentType').value=a.tipo_pago;
+ $('#editPaymentAmount').value=Number(a.monto);
+ $('#editPaymentDate').value=a.fecha_pago;
+ $('#editPaymentDueDate').value=a.fecha_programada||'';
+ $('#editPaymentMethod').value=a.metodo_pago;
+ $('#editPaymentReference').value=a.referencia||'';
+ $('#editPaymentReason').value='';
+ $('#paymentEditDialog').showModal();
+}
+async function saveExistingPayment(ev){
+ ev.preventDefault();
+ const button=ev.submitter;
+ if(button)button.disabled=true;
+ try{
+  const body={
+   id:$('#editPaymentId').value,accion:'corregir_pago',
+   tipo_pago:$('#editPaymentType').value,
+   monto:Number($('#editPaymentAmount').value),
+   fecha_pago:$('#editPaymentDate').value,
+   fecha_programada:$('#editPaymentDueDate').value||null,
+   metodo_pago:$('#editPaymentMethod').value,
+   referencia:$('#editPaymentReference').value,
+   motivo:$('#editPaymentReason').value.trim()
+  };
+  if(!Number.isFinite(body.monto)||body.monto<=0)throw Error('El importe debe ser mayor a cero');
+  if(body.motivo.length<4)throw Error('Escribe el motivo de la corrección (mínimo 4 caracteres)');
+  const response=await api('/api/abono',{method:'PATCH',body});
+  $('#paymentEditDialog').close();
+  await reloadOrder();
+  toast(response.warnings?.length?'Pago corregido. Avisos: '+response.warnings.join('; '):'Pago corregido en Supabase, historial y nuevos PDFs guardados');
+ }catch(err){toast(err.message,true)}
+ finally{if(button)button.disabled=false;}
 }
 async function payOrder(ev){ev.preventDefault();const id=st.actual?.orden?.id;if(!id)return;const btn=ev.submitter;btn.disabled=true;try{const x=await api('/api/abono',{method:'POST',body:{orden_id:id,fecha_pago:$('#payDate').value,fecha_programada:$('#payDueDate').value||null,monto:Number($('#payAmount').value),tipo_pago:$('#payType').value,metodo_pago:$('#payMethod').value,referencia:$('#payRef').value}});await reloadOrder();toast(x.warning||'Abono registrado en Supabase y nuevo PDF generado')}catch(err){toast(err.message,true)}finally{btn.disabled=false}}
 async function saveNoPayment(ev){ev.preventDefault();const id=st.actual?.orden?.id;if(!id)return;const btn=ev.submitter;btn.disabled=true;try{const x=await api('/api/sin-pago',{method:'POST',body:{orden_id:id,fecha:$('#missDate').value,motivo:$('#missReason').value||'Semana sin pago'}});await reloadOrder();toast(x.warning||'Día sin pago guardado en Supabase y PDF actualizado')}catch(err){toast(err.message,true)}finally{btn.disabled=false}}
@@ -248,6 +287,7 @@ async function action(act,id,el){try{
   toast('Enlace privado preparado. Confirma el envío en tu aplicación.');return;
  }
  if(act==='new-pdf'){if(!st.actual)return;const x=await api('/api/documento',{method:'POST',body:{orden_id:st.actual.orden.id,tipo:el.dataset.kind}});await reloadOrder();toast(`PDF guardado como versión ${x.documento.version}`);return;}
+ if(act==='edit-payment')return editExistingPayment(id);
  if(act==='void-payment'){const reason=prompt('Indica el motivo de la anulación de este abono:');if(reason===null)return;if(reason.trim().length<4)throw Error('Escribe un motivo de al menos 4 letras');await api('/api/abono',{method:'PATCH',body:{id,motivo:reason}});await reloadOrder();toast('Abono anulado, conservado en histórico');return;}
 
  if(act==='cancel-order'){if(!confirm('¿Cancelar esta orden? Se conservarán los registros y documentos.'))return;await api('/api/orden',{method:'PATCH',body:{id:st.actual.orden.id,estado:'cancelada'}});await reloadOrder();toast('Orden cancelada. Historial conservado');}
@@ -257,6 +297,7 @@ function exportData(){const stamp=today();saveCsv(`GRIPXELL_ORDENES_${stamp}.csv
 document.addEventListener('click',ev=>{const nav=ev.target.closest('[data-nav]');if(nav){go(nav.dataset.nav);return}const act=ev.target.closest('[data-action]');if(act){action(act.dataset.action,act.dataset.id,act);return}const close=ev.target.closest('[data-close]');if(close){$('#'+close.dataset.close).close()}});
 $('#orderClientSearch').addEventListener('input',renderClientSelector);$('#orderClient').addEventListener('change',renderDeviceSelect);$('#orderDevice').addEventListener('change',fillDeviceItem);
 $('#deviceForm').addEventListener('submit',saveDevice);
+$('#paymentEditForm').addEventListener('submit',saveExistingPayment);
 $('#addItem').addEventListener('click',()=>addRow());$('#clientForm').addEventListener('submit',saveClient);$('#orderForm').addEventListener('submit',saveOrder);['#ivaPercent','#downPayment','#weeklyPayment','#saleType'].forEach(s=>$(s).addEventListener('input',calc));$('#saleType').addEventListener('change',()=>{if($('#saleType').value==='contado'){$('#weeklyPayment').value=0;calc()}});
 $('#searchClients').addEventListener('input',renderClients);$('#searchOrders').addEventListener('input',renderOrders);$('#filterStatus').addEventListener('change',renderOrders);$('#exportCsv').addEventListener('click',exportData);$('#importExcel')?.addEventListener('click',importExcel);
 $('#adminClientSearch').addEventListener('input',renderAdminClients);$('#adminClientSelect').addEventListener('change',showAdminClient);
