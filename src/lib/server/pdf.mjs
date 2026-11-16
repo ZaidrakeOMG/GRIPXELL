@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {dirname, resolve} from 'node:path';
 import {historialPagos} from '../historial-pagos.mjs';
+import {partidasConIva} from '../calculos.mjs';
 
 const logo = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../../public/gripxell-logo.png'));
 const C = {white:'#FFFFFF',ink:'#1C2937',deep:'#083E45',teal:'#1DA6A7',mint:'#EDF9F8',pale:'#F5FAFA',line:'#DCE9EB',muted:'#708189',warning:'#8A651C',inactive:'#A54E49'};
@@ -80,13 +81,13 @@ function concepto(d,o,partidas,abonos,y,tipo,dispositivo){
 }
 function listaProductos(d,o,items,y,tipo){
  if((items||[]).length<2)return y;
- y=ensure(d,y,34,o,tipo);txt(d,'DETALLE DE PRODUCTOS',X+4,y,240,11,C.ink,true);y+=21;
+ y=ensure(d,y,34,o,tipo);txt(d,'DETALLE DE PRODUCTOS (IVA INCLUIDO)',X+4,y,300,11,C.ink,true);y+=21;
  for(let i=0;i<items.length;i++){
   y=ensure(d,y,26,o,tipo);
   if(i%2===0)rect(d,X,y,CW,23,C.pale,0);
   const p=items[i];
   txt(d,`${Number(p.cantidad||0)} × ${limpio(p.descripcion)}`,X+8,y+5,CW-175,9,C.ink);
-  txt(d,moneda((Number(p.cantidad)||0)*(Number(p.precio_unitario)||0)),X+CW-144,y+5,130,9,C.ink,true,{align:'right'});
+  txt(d,moneda(p.importe_con_iva),X+CW-144,y+5,130,9,C.ink,true,{align:'right'});
   y+=26;
  }
  return y+8;
@@ -156,7 +157,7 @@ export function createPdf(info,tipo='estado_cuenta'){
   let y=145;
   y=clienteCard(d,cliente,orden,tipo,y,info.dispositivo);
   y=concepto(d,orden,partidas,abonos,y,tipo,info.dispositivo);
-  y=listaProductos(d,orden,partidas,y,tipo);
+  y=listaProductos(d,orden,partidasConIva(orden,partidas),y,tipo);
   if(tipo==='estado_cuenta')y=cronologia(d,orden,abonos,eventos,y,tipo);
   y=condicion(d,orden,y,tipo);
   y=resumen(d,orden,abonos,y,tipo);

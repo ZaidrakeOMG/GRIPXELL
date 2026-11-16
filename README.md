@@ -67,3 +67,14 @@ Este procedimiento elimina **todos** los datos, incluidos los que puedan ser rea
 3. Comprueba que los siete conteos del resultado sean cero. Se conservan tablas, funciones y el bucket. El folio autonumérico vuelve a empezar en 0017.
 
 La importación del registro de prueba (folio 0016) está deshabilitada. No hay login en el sistema: antes de hacerlo público, protege el despliegue de Vercel. El código de eliminación no sustituye la protección de acceso de toda la aplicación. Rota la clave secreta de Supabase que se compartió anteriormente y cambia el repositorio de GitHub a privado.
+
+## Precios con IVA y nueva captura de cliente
+
+El detalle de las órdenes muestra **precio unitario e importe con IVA incluido** a partir del IVA ya almacenado en cada orden. No modifica ventas históricas, enganches, pagos ni saldos. Los PDFs que ya existían se conservan como versiones históricas; desde el detalle de orden, pulsa **Nuevo estado PDF** o **Nueva nota PDF** para generar una versión actualizada.
+
+Si el botón de eliminación falla:
+
+1. Ejecuta **supabase/05_ADMINISTRACION_ELIMINAR_CLIENTE.sql** en el SQL Editor del proyecto GRIPXELL **después** de instalar el SQL 00. No lo ejecutes en Party-book.
+2. En **Vercel > Project > Settings > Environment Variables** crea **GRIPXELL_CODIGO_BORRADO** con un secreto de al menos 12 caracteres para el ambiente Production (y Preview si usas previsualizaciones). **Redeploy** para que la variable quede cargada. No subas el código a GitHub.
+3. En **Administración**, busca al cliente, elige **Eliminar solo historial** si quieres conservar nombre/IMEI para repetir la venta o **Eliminar cliente y todo su expediente** para volverlo a capturar desde cero. Sigue la confirmación exacta, introduce el código y verifica que desapareció.
+4. Si falla, lee el mensaje completo del diálogo de error: ahora distingue la función SQL faltante, el trigger antiguo y la variable de entorno sin configurar. **No ejecutes el SQL 06** para borrar un solo cliente: limpia toda la base.
