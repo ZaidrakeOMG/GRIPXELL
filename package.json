@@ -11,7 +11,7 @@
     "demo:pdf": "node scripts/demo-pdf.mjs"
   },
   "dependencies": {
-    "@astrojs/node": "11.1.13",
+    "@astrojs/vercel": "11.0.22",
     "@supabase/supabase-js": "2.80.0",
     "astro": "7.4.12",
     "dotenv": "16.6.1",
@@ -19,6 +19,6 @@
     "pdfkit": "0.17.2"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": "24.x"
   }
 }
