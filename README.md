@@ -78,3 +78,11 @@ Si el botón de eliminación falla:
 2. En **Vercel > Project > Settings > Environment Variables** crea **GRIPXELL_CODIGO_BORRADO** con un secreto de al menos 12 caracteres para el ambiente Production (y Preview si usas previsualizaciones). **Redeploy** para que la variable quede cargada. No subas el código a GitHub.
 3. En **Administración**, busca al cliente, elige **Eliminar solo historial** si quieres conservar nombre/IMEI para repetir la venta o **Eliminar cliente y todo su expediente** para volverlo a capturar desde cero. Sigue la confirmación exacta, introduce el código y verifica que desapareció.
 4. Si falla, lee el mensaje completo del diálogo de error: ahora distingue la función SQL faltante, el trigger antiguo y la variable de entorno sin configurar. **No ejecutes el SQL 06** para borrar un solo cliente: limpia toda la base.
+
+## Modificar abonos y enganches recibidos
+
+En **Historial de órdenes > Ver orden > Abonos registrados**, pulsa **Editar** junto a un pago vigente. Se pueden corregir el monto, fecha real, fecha programada, tipo de movimiento (abono, enganche, liquidación), forma de pago y referencia. El motivo de corrección es obligatorio. La operación actualiza el saldo, conserva los valores anteriores en la bitácora y guarda nuevas versiones de la nota y del estado de cuenta.
+
+**Instalación necesaria:** ejecutar `supabase/07_CORREGIR_ABONOS_Y_ENGANCHES.sql` en el SQL Editor del proyecto GRIPXELL. Este paso no borra datos. Después, Vercel desplegará la nueva interfaz al actualizar `main`. La corrección se procesa desde el servidor con la clave privada de Supabase.
+
+El campo **Enganche acordado** y la **cuota semanal** se modifican aparte en la sección de condiciones de la orden; editar un enganche recibido cambia el dinero realmente contabilizado. Los pagos anulados y las órdenes canceladas no son editables. Las operaciones se rechazan si se intenta superar el valor total de la venta.
