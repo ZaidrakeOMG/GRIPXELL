@@ -66,3 +66,33 @@ test('pago anulado no se suma al total acumulado',()=>{
  assert.deepEqual(h.map(x=>x.acumulado),[100,100,600]);
  assert.equal(h.at(-1).saldo,1400);
 });
+
+test('corrige importe y tipo de enganche recibido sin cambiar el enganche acordado',()=>{
+ const orden={total:2000,enganche:500,abono_semanal:100};
+ const antes=historialPagos(orden,[
+  {id:'enganche1',tipo_pago:'enganche',estado:'vigente',fecha_pago:'2026-11-16',monto:50},
+  {id:'pago1',tipo_pago:'abono',estado:'vigente',fecha_pago:'2026-11-18',monto:100}
+ ]);
+ const despues=historialPagos(orden,[
+  {id:'enganche1',tipo_pago:'enganche',estado:'vigente',fecha_pago:'2026-11-16',monto:500},
+  {id:'pago1',tipo_pago:'abono',estado:'vigente',fecha_pago:'2026-11-18',monto:100}
+ ]);
+ assert.equal(orden.enganche,500);
+ assert.equal(antes.at(-1).acumulado,150);
+ assert.equal(despues.at(-1).acumulado,600);
+ assert.equal(despues.at(-1).saldo,1400);
+ assert.match(despues[0].etiqueta,/Enganche/);
+});
+
+test('al corregir fecha programada se vuelve a calcular la marca de atraso',()=>{
+ const orden={total:2000};
+ const antes=historialPagos(orden,[
+  {id:'pago1',tipo_pago:'abono',estado:'vigente',fecha_pago:'2026-12-10',fecha_programada:'2026-12-05',monto:200}
+ ]);
+ const corregido=historialPagos(orden,[
+  {id:'pago1',tipo_pago:'abono',estado:'vigente',fecha_pago:'2026-12-05',fecha_programada:'2026-12-05',monto:200}
+ ]);
+ assert.deepEqual(antes.map(x=>x.tipo),['sin_pago','pago']);
+ assert.deepEqual(corregido.map(x=>x.tipo),['pago']);
+ assert.equal(corregido[0].saldo,1800);
+});
