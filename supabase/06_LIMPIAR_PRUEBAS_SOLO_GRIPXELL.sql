@@ -1,6 +1,6 @@
 -- ATENCION: ELIMINA PERMANENTEMENT TODOS LOS REGISTROS DE GRIPXELL.
 -- Ejecuta SOLO en https://supabase.com/dashboard/project/xddcspjdcrjonfowspcp/sql/new
--- Antes limpia los PDF de Storage con: npm.cmd run limpiar:pdfs -- --confirmar=SI_BORRAR_PDFS
+-- Antes elimina los PDFs desde Supabase > Storage > gripxell-documentos > carpeta ordenes.
 -- No elimina tablas, funciones, bucket ni RLS. Tampoco afecta Party-book.
 -- Si hay datos reales mezclados con pruebas, tambien se perderan.
 BEGIN;
