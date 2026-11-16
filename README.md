@@ -49,3 +49,21 @@ La interfaz **no tiene login**, según lo solicitado. Astro se conecta a Supabas
 - Solo se muestra correo para **compartir PDFs por correo electrónico**; no es identificador de cliente.
 
 Nota: no se aplicó el SQL en tu base en vivo desde aquí. Corre el instalador antes de usar la V5.
+
+## Entrega: eliminar cliente o historial
+
+Desde la pestaña **Administración** se puede elegir un cliente y eliminar:
+- **Solo historial**: borra órdenes, abonos, bitácora y PDFs relacionados; conserva la ficha e IMEIs.
+- **Cliente y expediente**: borra además dispositivos y datos personales.
+
+Antes de usar esta función ejecuta `supabase/05_ADMINISTRACION_ELIMINAR_CLIENTE.sql` en SQL Editor del proyecto GRIPXELL. En Vercel configura la variable privada `GRIPXELL_CODIGO_BORRADO` con un valor aleatorio de al menos 12 caracteres. No es un inicio de sesión; solo se solicita cuando se elimina un expediente. Además se exige escribir exactamente el nombre del cliente para confirmar.
+
+## Limpiar registros de prueba antes de entregar
+
+Este procedimiento elimina **todos** los datos, incluidos los que puedan ser reales si están mezclados con pruebas. **No lo ejecutes en Party-book**.
+
+1. En Supabase, proyecto `xddcspjdcrjonfowspcp`, abre Storage > `gripxell-documentos` y elimina los archivos de la carpeta `ordenes`.
+2. En SQL Editor del mismo proyecto, ejecuta `supabase/06_LIMPIAR_PRUEBAS_SOLO_GRIPXELL.sql`.
+3. Comprueba que los siete conteos del resultado sean cero. Se conservan tablas, funciones y el bucket. El folio autonumérico vuelve a empezar en 0017.
+
+La importación del registro de prueba (folio 0016) está deshabilitada. No hay login en el sistema: antes de hacerlo público, protege el despliegue de Vercel. El código de eliminación no sustituye la protección de acceso de toda la aplicación. Rota la clave secreta de Supabase que se compartió anteriormente y cambia el repositorio de GitHub a privado.
