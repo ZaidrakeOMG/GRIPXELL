@@ -33,3 +33,36 @@ test('no se marca sin pago si pago en fecha o antes',()=>{
  assert.deepEqual(h.map(x=>x.tipo),['pago']);
 });
 test('formato fecha',()=>assert.equal(fechaLarga('2026-12-10'),'10/diciembre/2026'));
+
+
+test('dos pagos el mismo dia aparecen separados y el acumulado es la suma',()=>{
+ const h=historialPagos({total:2000},[
+  {id:'p1',fecha_pago:'2026-11-15',fecha_registro:'2026-11-15T12:00:00Z',monto:100,estado:'vigente',tipo_pago:'abono'},
+  {id:'p2',fecha_pago:'2026-11-15',fecha_registro:'2026-11-15T12:05:00Z',monto:500,estado:'vigente',tipo_pago:'abono'}
+ ]);
+ assert.equal(h.length,2);
+ assert.deepEqual(h.map(x=>x.etiqueta),['Pago 1/2 del 15/noviembre/2026','Pago 2/2 del 15/noviembre/2026']);
+ assert.deepEqual(h.map(x=>x.importe),[100,500]);
+ assert.deepEqual(h.map(x=>x.acumulado),[100,600]);
+ assert.deepEqual(h.map(x=>x.saldo),[1900,1400]);
+});
+
+test('sin pago no cambia el acumulado y al pagar despues se suma',()=>{
+ const h=historialPagos({total:2000},[
+  {id:'p1',fecha_pago:'2026-11-15',monto:100,estado:'vigente',tipo_pago:'abono'},
+  {id:'p2',fecha_pago:'2026-11-28',fecha_programada:'2026-11-21',monto:500,estado:'vigente',tipo_pago:'abono'}
+ ],[{tipo_movimiento:'sin_pago',descripcion:'No pago',datos_nuevos:{fecha:'2026-11-21'}}]);
+ assert.deepEqual(h.map(x=>x.acumulado),[100,100,600]);
+ assert.deepEqual(h.map(x=>x.saldo),[1900,1900,1400]);
+ assert.equal(h.filter(x=>x.tipo==='sin_pago').length,1);
+});
+
+test('pago anulado no se suma al total acumulado',()=>{
+ const h=historialPagos({total:2000},[
+  {id:'p1',fecha_pago:'2026-11-15',monto:100,estado:'vigente',tipo_pago:'abono'},
+  {id:'p2',fecha_pago:'2026-11-15',monto:500,estado:'anulado',tipo_pago:'abono'},
+  {id:'p3',fecha_pago:'2026-11-16',monto:500,estado:'vigente',tipo_pago:'abono'}
+ ]);
+ assert.deepEqual(h.map(x=>x.acumulado),[100,100,600]);
+ assert.equal(h.at(-1).saldo,1400);
+});
