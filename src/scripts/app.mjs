@@ -174,6 +174,7 @@ const activeDocs=[...d.documentos].sort((a,b)=>String(b.fecha_generacion||'').lo
  const partidasVisibles=partidasConIva(o,d.partidas);
  const engancheRecibido=d.abonos.filter(a=>a.estado==='vigente'&&a.tipo_pago==='enganche').reduce((n,a)=>n+Number(a.monto||0),0);
 $('#detailBody').innerHTML=`<div class="detail-info"><strong>Cliente:</strong> ${e(c.nombre)}<br><strong>Dirección:</strong> ${e(c.direccion||'—')} · ${e(c.ciudad||'—')} · C.P. ${e(c.codigo_postal||'—')}<br><strong>Teléfono:</strong> ${e(c.telefono||'—')} &nbsp; <strong>IMEI:</strong> ${e(d.dispositivo?.imei||'No registrado')}<br><strong>Dispositivo:</strong> ${e(d.dispositivo?.descripcion||'Sin dispositivo asociado')} &nbsp; <strong>RFC:</strong> ${e(c.rfc||'—')}<br><strong>Estado:</strong> ${e(o.estado)} &nbsp; <strong>Enganche:</strong> ${fmt(o.enganche)} &nbsp; <strong>Semanal:</strong> ${fmt(o.abono_semanal)}</div>
+<div class="detail-actions" style="justify-content:flex-end;margin:12px 0">${o.estado!=='cancelada'?'<button class="btn btn-outline btn-compact" data-action="edit-expediente">Editar RFC, dispositivo e IMEI</button>':''}</div>
 <div class="detail-summary"><div class="detail-stat"><small>VALOR DE LA VENTA</small><strong>${fmt(tot)}</strong></div><div class="detail-stat"><small>TOTAL ABONADO</small><strong>${fmt(paid)}</strong></div><div class="detail-stat"><small>SALDO PENDIENTE</small><strong>${fmt(bal)}</strong></div></div>
 <section class="detail-section">
   <h3>Enganche y abono semanal</h3>
@@ -193,6 +194,60 @@ ${o.estado==='vigente'?`<section class="detail-section"><h3>Registrar pago (en f
 <section class="detail-section"><h3>Bitácora de movimientos</h3><div class="table-wrap"><table class="detail-table"><thead><tr><th>FECHA</th><th>MOVIMIENTO</th><th>DESCRIPCIÓN</th></tr></thead><tbody>${d.eventos.slice(0,50).map(v=>`<tr><td>${dateFmt(v.fecha_movimiento)}</td><td>${e(v.tipo_movimiento.replaceAll('_',' '))}</td><td>${e(v.descripcion||'')}</td></tr>`).join('')||'<tr><td colspan="3">Sin movimientos</td></tr>'}</tbody></table></div>${o.estado!=='cancelada'?`<div class="detail-actions" style="justify-content:flex-end;margin-top:15px"><button class="btn btn-danger btn-compact" data-action="cancel-order">Cancelar orden</button></div>`:''}</section>`;
 $('#orderDialog').showModal();$('#conditionsForm')?.addEventListener('submit',saveConditions);$('#paymentForm')?.addEventListener('submit',payOrder);$('#missedPaymentForm')?.addEventListener('submit',saveNoPayment);
 }catch(err){toast(err.message,true)}}
+function editExpediente(){
+ const o=st.actual?.orden,c=st.actual?.cliente;
+ if(!o||!c)throw Error('Abre una orden antes de editarla');
+ if(o.estado==='cancelada')throw Error('No se puede editar una orden cancelada');
+ $('#expedienteForm').reset();
+ $('#expedienteOrderLabel').textContent='Orden '+folio(o.folio)+' · '+c.nombre;
+ $('#expedienteRfc').value=c.rfc||'';
+ const equipos=devicesFor(c.id);
+ // Se permite visualizar el equipo histórico aunque actualmente esté dado de baja.
+ $('#expedienteDevice').innerHTML='<option value="">Sin dispositivo asociado</option>'+equipos.map(d=>
+  '<option value="'+e(d.id)+'">'+e(d.descripcion)+' · IMEI '+e(d.imei||'Sin registrar')+(d.estado==='baja'?' (baja)':'')+'</option>'
+ ).join('');
+ $('#expedienteDevice').value=o.dispositivo_id||'';
+ $('#expedienteNewFields').classList.add('hidden');
+ $('#expedienteDevice').disabled=false;
+ $('#expedienteDescription').required=false;$('#expedienteImei').required=false;
+ $('#expedienteToggleNew').textContent='Registrar un celular nuevo e IMEI';
+ $('#expedienteDialog').showModal();
+}
+function toggleNewExpediente(){
+ const opening=$('#expedienteNewFields').classList.contains('hidden');
+ $('#expedienteNewFields').classList.toggle('hidden',!opening);
+ $('#expedienteDevice').disabled=opening;
+ $('#expedienteDescription').required=opening;$('#expedienteImei').required=opening;
+ $('#expedienteToggleNew').textContent=opening?'Seleccionar un equipo ya registrado':'Registrar un celular nuevo e IMEI';
+}
+async function saveExpediente(ev){
+ ev.preventDefault();
+ const o=st.actual?.orden,c=st.actual?.cliente,btn=ev.submitter;
+ if(!o||!c)return;
+ btn.disabled=true;
+ try{
+  let dispositivoId=$('#expedienteDevice').value||null;
+  if(!$('#expedienteNewFields').classList.contains('hidden')){
+   const nuevo=await api('/api/dispositivo',{method:'POST',body:{
+    cliente_id:c.id,descripcion:$('#expedienteDescription').value.trim(),
+    marca:$('#expedienteBrand').value,modelo:$('#expedienteModel').value,
+    imei:$('#expedienteImei').value,precio_venta:Number($('#expedientePrice').value)||0
+   }});
+   // Si fallara el paso final, el IMEI ya existe: se reintenta seleccionándolo sin duplicar.
+   dispositivoId=nuevo.dispositivo.id;
+   $('#expedienteDevice').insertAdjacentHTML('beforeend','<option value="'+e(dispositivoId)+'">'+e(nuevo.dispositivo.descripcion)+' · IMEI '+e(nuevo.dispositivo.imei)+'</option>');
+   $('#expedienteDevice').value=dispositivoId;
+   toggleNewExpediente();
+  }
+  const res=await api('/api/orden',{method:'PATCH',body:{
+   id:o.id,accion:'actualizar_expediente',rfc:$('#expedienteRfc').value,dispositivo_id:dispositivoId
+  }});
+  $('#expedienteDialog').close();
+  await reloadOrder();
+  toast(res.sin_cambios?'No había datos por modificar':res.warnings?.length?'Expediente guardado. Avisos: '+res.warnings.join('; '):'RFC, equipo e IMEI guardados. Nuevos PDFs archivados');
+ }catch(err){toast(err.message,true)}
+ finally{btn.disabled=false}
+}
 async function reloadOrder(){const id=st.actual?.orden?.id;await refresh();if(id)await showOrder(id)}
 async function saveConditions(ev){
  ev.preventDefault();
@@ -287,7 +342,9 @@ async function action(act,id,el){try{
   toast('Enlace privado preparado. Confirma el envío en tu aplicación.');return;
  }
  if(act==='new-pdf'){if(!st.actual)return;const x=await api('/api/documento',{method:'POST',body:{orden_id:st.actual.orden.id,tipo:el.dataset.kind}});await reloadOrder();toast(`PDF guardado como versión ${x.documento.version}`);return;}
- if(act==='edit-payment')return editExistingPayment(id);
+ if(act==='edit-expediente')return editExpediente();
+  if(act==='expediente-toggle-new')return toggleNewExpediente();
+  if(act==='edit-payment')return editExistingPayment(id);
  if(act==='void-payment'){const reason=prompt('Indica el motivo de la anulación de este abono:');if(reason===null)return;if(reason.trim().length<4)throw Error('Escribe un motivo de al menos 4 letras');await api('/api/abono',{method:'PATCH',body:{id,motivo:reason}});await reloadOrder();toast('Abono anulado, conservado en histórico');return;}
 
  if(act==='cancel-order'){if(!confirm('¿Cancelar esta orden? Se conservarán los registros y documentos.'))return;await api('/api/orden',{method:'PATCH',body:{id:st.actual.orden.id,estado:'cancelada'}});await reloadOrder();toast('Orden cancelada. Historial conservado');}
@@ -298,6 +355,7 @@ document.addEventListener('click',ev=>{const nav=ev.target.closest('[data-nav]')
 $('#orderClientSearch').addEventListener('input',renderClientSelector);$('#orderClient').addEventListener('change',renderDeviceSelect);$('#orderDevice').addEventListener('change',fillDeviceItem);
 $('#deviceForm').addEventListener('submit',saveDevice);
 $('#paymentEditForm').addEventListener('submit',saveExistingPayment);
+ $('#expedienteForm').addEventListener('submit',saveExpediente);
 $('#addItem').addEventListener('click',()=>addRow());$('#clientForm').addEventListener('submit',saveClient);$('#orderForm').addEventListener('submit',saveOrder);['#ivaPercent','#downPayment','#weeklyPayment','#saleType'].forEach(s=>$(s).addEventListener('input',calc));$('#saleType').addEventListener('change',()=>{if($('#saleType').value==='contado'){$('#weeklyPayment').value=0;calc()}});
 $('#searchClients').addEventListener('input',renderClients);$('#searchOrders').addEventListener('input',renderOrders);$('#filterStatus').addEventListener('change',renderOrders);$('#exportCsv').addEventListener('click',exportData);$('#importExcel')?.addEventListener('click',importExcel);
 $('#adminClientSearch').addEventListener('input',renderAdminClients);$('#adminClientSelect').addEventListener('change',showAdminClient);

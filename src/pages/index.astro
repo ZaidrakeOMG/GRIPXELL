@@ -112,6 +112,27 @@ export const prerender=false;
     <div class="modal-actions"><button class="btn btn-outline" type="button" data-close="paymentEditDialog">Cancelar</button><button class="btn btn-primary" type="submit">Guardar corrección</button></div>
   </form>
 </dialog>
+<dialog id="expedienteDialog" class="modal">
+ <form id="expedienteForm" class="modal-box">
+  <div class="modal-head"><div><div class="eyebrow">COMPLETAR EXPEDIENTE</div><h2>RFC, dispositivo e IMEI</h2><p class="muted" id="expedienteOrderLabel"></p></div><button class="close" type="button" data-close="expedienteDialog">Cerrar</button></div>
+  <div class="form-grid">
+   <label class="full">RFC del cliente (opcional)<input id="expedienteRfc" maxlength="20" autocapitalize="characters" placeholder="RFC del cliente"/></label>
+   <label class="full">Dispositivo vinculado a esta orden<select id="expedienteDevice"><option value="">Sin dispositivo asociado</option></select></label>
+  </div>
+  <div class="detail-actions" style="margin:12px 0"><button type="button" id="expedienteToggleNew" class="btn btn-outline" data-action="expediente-toggle-new">Registrar un celular nuevo e IMEI</button></div>
+  <div id="expedienteNewFields" class="hidden">
+   <div class="form-grid">
+    <label class="full">Nombre o descripción del celular<input id="expedienteDescription" maxlength="220" placeholder="Ej. iPhone 15 negro"/></label>
+    <label>Marca<input id="expedienteBrand" maxlength="90" placeholder="Apple"/></label>
+    <label>Modelo<input id="expedienteModel" maxlength="100"/></label>
+    <label>IMEI (15 dígitos)<input id="expedienteImei" maxlength="15" inputmode="numeric" pattern="[0-9]{15}" placeholder="15 dígitos"/></label>
+    <label>Precio del equipo (registro, no cambia la venta)<input id="expedientePrice" type="number" min="0" step="0.01" value="0"/></label>
+   </div>
+  </div>
+  <p class="small-note">Esta edición no altera el folio, el total, el enganche, los pagos ni el saldo. Los PDFs anteriores se conservan y se archivarán nuevas versiones.</p>
+  <div class="modal-actions"><button class="btn btn-outline" type="button" data-close="expedienteDialog">Cancelar</button><button class="btn btn-primary" type="submit">Guardar datos del expediente</button></div>
+ </form>
+</dialog>
 <dialog id="orderDialog" class="modal large"><div class="modal-box"><div class="modal-head"><div><div class="eyebrow">EXPEDIENTE DIGITAL</div><h2 id="detailTitle">Detalle de orden</h2><p class="muted" id="detailSubtitle"></p></div><button class="close" type="button" data-close="orderDialog">Cerrar</button></div><div id="detailBody" class="detail-body"></div></div></dialog>
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 <script>import "../scripts/app.mjs";</script>

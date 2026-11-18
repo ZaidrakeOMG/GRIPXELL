@@ -86,3 +86,11 @@ En **Historial de órdenes > Ver orden > Abonos registrados**, pulsa **Editar** 
 **Instalación necesaria:** ejecutar `supabase/07_CORREGIR_ABONOS_Y_ENGANCHES.sql` en el SQL Editor del proyecto GRIPXELL. Este paso no borra datos. Después, Vercel desplegará la nueva interfaz al actualizar `main`. La corrección se procesa desde el servidor con la clave privada de Supabase.
 
 El campo **Enganche acordado** y la **cuota semanal** se modifican aparte en la sección de condiciones de la orden; editar un enganche recibido cambia el dinero realmente contabilizado. Los pagos anulados y las órdenes canceladas no son editables. Las operaciones se rechazan si se intenta superar el valor total de la venta.
+
+## Completar RFC y dispositivo en órdenes existentes (noviembre 2026)
+
+En **Historial de órdenes > Abrir > Editar RFC, dispositivo e IMEI** ahora se puede completar el RFC del cliente, seleccionar un dispositivo previamente registrado o **registrar un celular nuevo con su IMEI de 15 dígitos** y asociarlo a una orden ya creada. Sirve también para órdenes antiguas con «Sin dispositivo asociado» o «IMEI: No registrado».
+
+La edición **no modifica el folio, el total, el enganche, las cuotas, los abonos ni el saldo**. Solo permite vincular equipos del mismo cliente, no de otro, y no deja modificar órdenes canceladas. Se registra en la bitácora y se generan nuevas versiones de PDF, conservando los documentos históricos. Si falla la generación de un PDF, la interfaz muestra un aviso y el usuario puede generar otra versión desde la orden.
+
+Reutiliza las funciones y tablas de V5: **no hace falta ejecutar SQL adicional** si la instalación V5 ya se realizó. Si el dispositivo nuevo alcanza a guardarse, pero falla la vinculación final, **no vuelvas a registrar ese IMEI**: reabre la orden y selecciónalo de la lista de dispositivos. El guardado de RFC y vínculo usa escrituras separadas de Supabase; no es una única transacción SQL. Se recomienda comprobar que el despliegue en Vercel use la última versión de `main`.

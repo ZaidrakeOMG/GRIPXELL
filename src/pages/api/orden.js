@@ -1,4 +1,5 @@
 import {getDb,check,loadOrder} from '../../lib/server/db.mjs';
+import {validarEdicionExpediente} from '../../lib/expediente.mjs';
 import {savePdf} from '../../lib/server/docs.mjs';
 import {reply,fail,jsonBody,txt,decimal,asDate,validUuid} from '../../lib/server/http.mjs';
 export const prerender=false;
@@ -23,6 +24,52 @@ export async function POST({request}){
 export async function PATCH({request}){
  try{
   const b=await jsonBody(request);if(!validUuid(b.id))throw new Error('ID inválido');
+  if(b.accion==='actualizar_expediente'){
+    // Solo datos identificativos: no modifica el total, folio, enganche ni abonos.
+    const db=getDb();
+    const anterior=check(await db.from('ordenes').select('id,cliente_id,dispositivo_id,estado').eq('id',b.id).single(),'Orden');
+    const cliente=check(await db.from('clientes').select('id,rfc').eq('id',anterior.cliente_id).single(),'Cliente');
+    const dispositivoId=b.dispositivo_id==null||b.dispositivo_id===''?null:b.dispositivo_id;
+    if(dispositivoId!==null && !validUuid(dispositivoId))throw Error('Selecciona un dispositivo válido');
+    const equipo=dispositivoId?check(await db.from('dispositivos').select('id,cliente_id,estado').eq('id',dispositivoId).maybeSingle(),'Dispositivo'):null;
+    const cambio=validarEdicionExpediente(anterior,cliente,equipo,dispositivoId,b.rfc);
+    if(!cambio.editaRfc&&!cambio.editaDispositivo)return reply({ok:true,sin_cambios:true,warnings:[]});
+    if(cambio.editaDispositivo){
+      let q=db.from('ordenes').update({dispositivo_id:cambio.dispositivo_id,fecha_actualizacion:new Date().toISOString()})
+       .eq('id',anterior.id).eq('estado',anterior.estado);
+      q=anterior.dispositivo_id?q.eq('dispositivo_id',anterior.dispositivo_id):q.is('dispositivo_id',null);
+      const guardada=check(await q.select('id').maybeSingle(),'Vincular equipo');
+      if(!guardada)throw Error('La orden cambió durante la edición; vuelve a abrirla');
+    }
+    if(cambio.editaRfc){
+      try{
+        check(await db.from('clientes').update({rfc:cambio.rfc}).eq('id',cliente.id).select('id').single(),'Actualizar RFC');
+      }catch(err){
+        if(cambio.editaDispositivo){
+          try{
+            let q=db.from('ordenes').update({dispositivo_id:anterior.dispositivo_id}).eq('id',anterior.id);
+            q=cambio.dispositivo_id?q.eq('dispositivo_id',cambio.dispositivo_id):q.is('dispositivo_id',null);
+            check(await q.select('id').maybeSingle(),'Restaurar vínculo');
+          }catch{}
+        }
+        throw Error('No se pudo guardar el RFC. Reabre el expediente antes de reintentar: '+err.message);
+      }
+    }
+    const warnings=[];
+    try{
+      check(await db.from('historial_movimientos').insert({
+        orden_id:anterior.id,tipo_movimiento:'correccion_expediente',
+        descripcion:'Actualización de RFC y dispositivo asociado',
+        datos_anteriores:{rfc:cliente.rfc,dispositivo_id:anterior.dispositivo_id},
+        datos_nuevos:{rfc:cambio.rfc,dispositivo_id:cambio.dispositivo_id}
+      }),'Bitácora del expediente');
+    }catch(err){warnings.push('Bitácora: '+err.message);}
+    for(const tipo of ['nota','estado_cuenta']){
+      try{await savePdf(anterior.id,tipo);}
+      catch(err){warnings.push('PDF '+tipo+': '+err.message);}
+    }
+    return reply({ok:true,warnings});
+  }
   if (b.accion==='actualizar_condiciones') {
     const db=getDb();
     const actual=check(await db.from('ordenes').select('id,total,estado,tipo_venta').eq('id',b.id).single(),'Orden');
